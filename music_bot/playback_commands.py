@@ -1,8 +1,10 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from config import ERROR_IMG, HELP_IMG, SEARCH_IMG, SPOTIFY_IMG, LIVE_IMG, MAX_QUEUE_SIZE, logger
-from client import app, sp, current_streams, queues, search_results
-from helpers import is_sudo, SUDO_USERS, search_yt, search_spotify, extract_info, extract_video_info, extract_m3u8_info, play_spotify_track, format_duration
+from pytgcalls.types import AudioPiped, HighQualityAudio, VideoPiped, HighQualityVideo
+from config import ERROR_IMG, HELP_IMG, SEARCH_IMG, SPOTIFY_IMG, LIVE_IMG, MAX_QUEUE_SIZE, logger, SUDO_USERS, NOW_PLAYING_IMG
+from client import app, sp, pytgcalls, current_streams, queues, search_results, auth_users
+from helpers import is_sudo, search_yt, search_spotify, extract_info, extract_video_info, extract_m3u8_info, format_duration
+from play_spotify_track import play_spotify_track
 
 @app.on_message(filters.command("play") & filters.group)
 async def play_music(_, message: Message):
