@@ -1,8 +1,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from config import HELP_IMG, SYSTEM_IMG, DEV_IMG, MAIN_MENU_IMG, SEARCH_IMG, SPOTIFY_IMG, ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG, AUTH_IMG, COMMAND_DETAILS, FFMPEG_PROCESSES, MAX_DURATION, MAX_QUEUE_SIZE, logger
+from pytgcalls.types import AudioPiped, HighQualityAudio, VideoPiped, HighQualityVideo
+from config import HELP_IMG, SYSTEM_IMG, DEV_IMG, MAIN_MENU_IMG, SEARCH_IMG, SPOTIFY_IMG, ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG, AUTH_IMG, COMMAND_DETAILS, FFMPEG_PROCESSES, MAX_DURATION, MAX_QUEUE_SIZE, logger, SUDO_USERS
 from client import app, pytgcalls, sp, current_streams, queues, paused_streams, search_results, auth_users
-from helpers import is_sudo, SUDO_USERS, format_duration, extract_info, extract_video_info, play_spotify_track
+from helpers import is_sudo, format_duration, extract_info, extract_video_info, play_spotify_track
 from ui_menus import commands_menu_ui
 from play_next import play_next
 from datetime import datetime

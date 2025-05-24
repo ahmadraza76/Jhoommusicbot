@@ -2,7 +2,7 @@ from pyrogram import Client
 from pytgcalls import PyTgCalls
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-from config import API_ID, API_HASH, BOT_TOKEN, FFMPEG_PROCESSES, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, logger
+from config import API_ID, API_HASH, BOT_TOKEN, FFMPEG_PROCESSES, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, logger, SUDO_USERS
 
 # Initialize bot
 app = Client("MusicBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -21,4 +21,4 @@ current_streams: Dict[int, Dict] = {}
 queues: Dict[int, List[Dict]] = {}
 paused_streams: Dict[int, bool] = {}
 search_results: Dict[int, List[Dict]] = {}
-auth_users: List[int] = []
+auth_users: List[int] = SUDO_USERS.copy()

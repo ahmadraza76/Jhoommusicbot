@@ -12,6 +12,7 @@ async def main():
         logger.error(f"Startup error: {e}")
     finally:
         await app.stop()
+        await pytgcalls.stop()
         logger.info("Music Bot stopped")
 
 if __name__ == "__main__":
