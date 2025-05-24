@@ -1,8 +1,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from config import ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG
-from client import app, pytgcalls, current_streams, queues, paused_streams
-from helpers import is_sudo, SUDO_USERS, format_duration, play_next
+from config import ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG, SUDO_USERS
+from client import app, pytgcalls, current_streams, queues, paused_streams, auth_users
+from helpers import is_sudo, format_duration
+from play_next import play_next
 
 @app.on_message(filters.command(["pause", "p"]) & filters.group)
 async def pause_music(_, message: Message):

@@ -1,7 +1,7 @@
 import asyncio
 import yt_dlp
 from typing import Dict, List, Optional
-from config import logger, MAX_DURATION, SPOTIFY_IMG
+from config import logger, MAX_DURATION, SPOTIFY_IMG, NOW_PLAYING_IMG, LIVE_IMG
 from client import sp
 
 async def is_sudo(user_id: int, auth_users: List[int], sudo_users: List[int]) -> bool:
