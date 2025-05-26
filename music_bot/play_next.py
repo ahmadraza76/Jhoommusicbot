@@ -1,5 +1,4 @@
-from pytgcalls.types import AudioPiped, VideoPiped
-from pytgcalls.types.input_stream.quality import HighQualityAudio, HighQualityVideo
+from pytgcalls.types import AudioPiped, VideoPiped, HighQualityAudio, HighQualityVideo
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from config import NOW_PLAYING_IMG, ERROR_IMG, logger
 from client import app, pytgcalls, current_streams, queues, paused_streams
@@ -28,14 +27,14 @@ async def play_next(chat_id: int):
                 ])
             )
         except Exception as e:
-            logger.error(f"Play next error: {e}")
-            await app.send_photo(
+            logger.error(f"Play next error: {e} for chat_id {chat_id} with track {track if 'track' in locals() else 'unknown'}")
+            if chat_id in current_streams: # Clear the problematic stream
+                del current_streams[chat_id]
+            await app.send_message(
                 chat_id,
-                photo=ERROR_IMG,
-                caption=f"❌ **Error:** {e}\n\nTry again.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Retry", callback_data="retry_play")]])
+                f"❌ **Error playing next track:** {e}.\n\nPlease try skipping or playing a new song."
             )
-            await play_next(chat_id)
+            # Consider if we need to call play_next again or leave the queue as is for user intervention
     else:
         if chat_id in current_streams:
             del current_streams[chat_id]
