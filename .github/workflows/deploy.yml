@@ -1,0 +1,31 @@
+name: Auto Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main  # ya default branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        run: |
+          ssh root@${{ secrets.VPS_HOST }} << 'EOF'
+            cd /root/Jhoommusicbot || git clone git@github.com:ahmadraza76/Jhoommusicbot.git /root/Jhoommusicbot
+            cd /root/Jhoommusicbot
+            git pull origin main
+            pkill -f main.py || true  # Agar bot already chal raha ho
+            nohup python3 main.py &   # Yahan par aapka entry file
+          EOF
