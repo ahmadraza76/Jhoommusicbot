@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from config import ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG, SUDO_USERS
 from client import app, pytgcalls, current_streams, queues, paused_streams, auth_users
-from helpers import is_sudo, format_duration
+from helpers import is_sudo
 from play_next import play_next
 
 @app.on_message(filters.command(["pause", "p"]) & filters.group)
@@ -65,6 +65,7 @@ async def stop_music(_, message: Message):
 
 @app.on_message(filters.command(["queue", "q"]) & filters.group)
 async def show_queue(_, message: Message):
+    from helpers import format_duration
     chat_id = message.chat.id
     if chat_id in queues and queues[chat_id]:
         queue_text = "📋 **Queue**\n\n"
