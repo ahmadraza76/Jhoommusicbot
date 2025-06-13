@@ -2,7 +2,8 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 from config import ERROR_IMG, HELP_IMG, logger
 from client import app, auth_users
-from helpers import is_sudo, SUDO_USERS
+from .helpers import is_sudo
+from .config import SUDO_USERS
 
 @app.on_message(filters.command("broadcast") & filters.private)
 async def broadcast_message(_, message: Message):
