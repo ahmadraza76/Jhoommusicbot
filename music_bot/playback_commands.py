@@ -3,10 +3,11 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pytgcalls.types import AudioPiped, VideoPiped
 from config import ERROR_IMG, HELP_IMG, SEARCH_IMG, SPOTIFY_IMG, LIVE_IMG, MAX_QUEUE_SIZE, logger, SUDO_USERS, NOW_PLAYING_IMG
 from client import app, sp, pytgcalls, current_streams, queues, search_results, auth_users
-from helpers import is_sudo, search_yt, search_spotify, extract_info, extract_video_info, extract_m3u8_info, format_duration, play_spotify_track
+from helpers import is_sudo, search_yt, search_spotify, extract_info
 
 @app.on_message(filters.command("play") & filters.group)
 async def play_music(_, message: Message):
+    from helpers import format_duration
     if not await is_sudo(message.from_user.id, auth_users, SUDO_USERS):
         return await message.reply_photo(
             photo=ERROR_IMG, 
@@ -25,6 +26,7 @@ async def play_music(_, message: Message):
     chat_id = message.chat.id
     
     # Handle Spotify links
+    from helpers import play_spotify_track
     if "open.spotify.com/track/" in query:
         if not sp:
             return await message.reply_photo(
@@ -134,6 +136,7 @@ async def play_music(_, message: Message):
 
 @app.on_message(filters.command(["vplay", "vp"]) & filters.group)
 async def play_video(_, message: Message):
+    from helpers import extract_video_info, format_duration
     if not await is_sudo(message.from_user.id, auth_users, SUDO_USERS):
         return await message.reply_photo(
             photo=ERROR_IMG, 
@@ -234,6 +237,7 @@ async def play_video(_, message: Message):
 
 @app.on_message(filters.command(["live", "stream"]) & filters.group)
 async def live_stream(_, message: Message):
+    from helpers import extract_m3u8_info
     if not await is_sudo(message.from_user.id, auth_users, SUDO_USERS):
         return await message.reply_photo(
             photo=ERROR_IMG, 

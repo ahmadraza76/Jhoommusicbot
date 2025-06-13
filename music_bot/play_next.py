@@ -2,9 +2,9 @@ from pytgcalls.types import AudioPiped, VideoPiped
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from config import NOW_PLAYING_IMG, ERROR_IMG, logger
 from client import app, pytgcalls, current_streams, queues, paused_streams
-from helpers import format_duration
 
 async def play_next(chat_id: int):
+    from helpers import format_duration
     if chat_id in queues and queues[chat_id]:
         track = queues[chat_id].pop(0)
         current_streams[chat_id] = track

@@ -3,7 +3,7 @@ from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBu
 from pytgcalls.types import AudioPiped, VideoPiped
 from config import HELP_IMG, SYSTEM_IMG, DEV_IMG, MAIN_MENU_IMG, SEARCH_IMG, SPOTIFY_IMG, ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG, AUTH_IMG, COMMAND_DETAILS, FFMPEG_PROCESSES, MAX_DURATION, MAX_QUEUE_SIZE, logger, SUDO_USERS
 from client import app, pytgcalls, sp, current_streams, queues, paused_streams, search_results, auth_users
-from helpers import is_sudo, format_duration, extract_info, extract_video_info, play_spotify_track
+from helpers import is_sudo, extract_info
 from ui_menus import commands_menu_ui
 from play_next import play_next
 from datetime import datetime
@@ -142,6 +142,7 @@ async def search_menu(_, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^play_(.+)$"))
 async def play_selected(_, callback: CallbackQuery):
+    from helpers import format_duration
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
@@ -202,6 +203,7 @@ async def play_selected(_, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^vplay_(.+)$"))
 async def vplay_selected(_, callback: CallbackQuery):
+    from helpers import extract_video_info, format_duration
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
@@ -262,6 +264,7 @@ async def vplay_selected(_, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^spotify_(.+)$"))
 async def spotify_selected(_, callback: CallbackQuery):
+    from helpers import play_spotify_track
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
@@ -368,6 +371,7 @@ async def stop_callback(_, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^show_queue$"))
 async def show_queue_callback(_, callback: CallbackQuery):
+    from helpers import format_duration
     chat_id = callback.message.chat.id
     if chat_id in queues and queues[chat_id]:
         queue_text = "📋 **Queue**\n\n"
@@ -413,6 +417,7 @@ async def clear_queue_callback(_, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^now_playing$"))
 async def now_playing_callback(_, callback: CallbackQuery):
+    from helpers import format_duration
     chat_id = callback.message.chat.id
     if chat_id in current_streams:
         track = current_streams[chat_id]
@@ -438,6 +443,7 @@ async def now_playing_callback(_, callback: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^more_results$"))
 async def more_results_callback(_, callback: CallbackQuery):
+    from helpers import format_duration
     chat_id = callback.message.chat.id
     if chat_id in search_results and len(search_results[chat_id]) > 5:
         results = search_results[chat_id][5:10]
