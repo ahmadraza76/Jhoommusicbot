@@ -7,7 +7,9 @@ from config import API_ID, API_HASH, BOT_TOKEN, FFMPEG_PROCESSES, SPOTIFY_CLIENT
 
 # Initialize bot
 app = Client("MusicBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-pytgcalls = PyTgCalls(app, cache_duration=100, overload_quiet_mode=True, multi_threading=FFMPEG_PROCESSES > 1)
+
+# Initialize PyTgCalls with correct parameters
+pytgcalls = PyTgCalls(app)
 
 # Spotify setup
 if SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET:

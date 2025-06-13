@@ -1,4 +1,4 @@
-from pytgcalls.types import AudioPiped, VideoPiped, HighQualityAudio, HighQualityVideo
+from pytgcalls.types import AudioPiped, VideoPiped
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from config import NOW_PLAYING_IMG, ERROR_IMG, logger
 from client import app, pytgcalls, current_streams, queues, paused_streams
@@ -10,13 +10,15 @@ async def play_next(chat_id: int):
         current_streams[chat_id] = track
         try:
             if track.get('video'):
-                await pytgcalls.change_stream(chat_id, VideoPiped(track['url'], HighQualityVideo()))
+                await pytgcalls.change_stream(chat_id, VideoPiped(track['url']))
             else:
-                await pytgcalls.change_stream(chat_id, AudioPiped(track['url'], HighQualityAudio(), **track.get('ffmpeg_options', {})))
+                await pytgcalls.change_stream(chat_id, AudioPiped(track['url']))
+            
             caption = f"🎵 **Now Playing**\n\n**{track['title'][:35]}{'...' if len(track['title']) > 35 else ''}**\n"
             if track.get('album'):
                 caption += f"💿 Album: {track['album']}\n"
             caption += f"⏳ Duration: {'LIVE' if track.get('is_live') else await format_duration(track['duration'])}"
+            
             await app.send_photo(
                 chat_id,
                 photo=track.get('thumbnail', NOW_PLAYING_IMG),
@@ -28,13 +30,12 @@ async def play_next(chat_id: int):
             )
         except Exception as e:
             logger.error(f"Play next error: {e} for chat_id {chat_id} with track {track if 'track' in locals() else 'unknown'}")
-            if chat_id in current_streams: # Clear the problematic stream
+            if chat_id in current_streams:
                 del current_streams[chat_id]
             await app.send_message(
                 chat_id,
                 f"❌ **Error playing next track:** {e}.\n\nPlease try skipping or playing a new song."
             )
-            # Consider if we need to call play_next again or leave the queue as is for user intervention
     else:
         if chat_id in current_streams:
             del current_streams[chat_id]

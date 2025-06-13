@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from pytgcalls.types import AudioPiped, HighQualityAudio, VideoPiped, HighQualityVideo
+from pytgcalls.types import AudioPiped, VideoPiped
 from config import HELP_IMG, SYSTEM_IMG, DEV_IMG, MAIN_MENU_IMG, SEARCH_IMG, SPOTIFY_IMG, ERROR_IMG, NOW_PLAYING_IMG, QUEUE_IMG, AUTH_IMG, COMMAND_DETAILS, FFMPEG_PROCESSES, MAX_DURATION, MAX_QUEUE_SIZE, logger, SUDO_USERS
 from client import app, pytgcalls, sp, current_streams, queues, paused_streams, search_results, auth_users
 from helpers import is_sudo, format_duration, extract_info, extract_video_info, play_spotify_track
@@ -172,7 +172,7 @@ async def play_selected(_, callback: CallbackQuery):
         else:
             current_streams[chat_id] = track
             try:
-                await pytgcalls.join_group_call(chat_id, AudioPiped(track['url'], HighQualityAudio()))
+                await pytgcalls.join_group_call(chat_id, AudioPiped(track['url']))
                 await callback.message.edit_media(
                     InputMediaPhoto(
                         media=track.get('thumbnail', NOW_PLAYING_IMG),
@@ -232,7 +232,7 @@ async def vplay_selected(_, callback: CallbackQuery):
         else:
             current_streams[chat_id] = track
             try:
-                await pytgcalls.join_group_call(chat_id, VideoPiped(track['url'], HighQualityVideo()))
+                await pytgcalls.join_group_call(chat_id, VideoPiped(track['url']))
                 await callback.message.edit_media(
                     InputMediaPhoto(
                         media=track.get('thumbnail', NOW_PLAYING_IMG),
