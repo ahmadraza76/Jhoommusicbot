@@ -16,6 +16,7 @@ async def help_menu(_, callback: CallbackQuery):
         for cmd in details['commands']:
             help_text += f"• `{cmd}`\n"
         help_text += "\n"
+    
     await callback.message.edit_media(
         InputMediaPhoto(media=HELP_IMG, caption=help_text),
         reply_markup=InlineKeyboardMarkup([
@@ -29,6 +30,7 @@ async def system_menu(_, callback: CallbackQuery):
     spotify_status = "✅ Enabled" if sp else "❌ Disabled"
     active_streams = len(current_streams)
     total_queued = sum(len(q) for q in queues.values())
+    
     await callback.message.edit_media(
         InputMediaPhoto(
             media=SYSTEM_IMG,
@@ -63,8 +65,8 @@ async def dev_menu(_, callback: CallbackQuery):
             caption="""👨‍💻 **About Developer**
 
 🌟 **Bot Version:** v3.2.1
-📅 **Updated:** 2025-05-17
-🧠 **AI Core:** GPT-4o
+📅 **Updated:** 2025-01-17
+🧠 **AI Core:** Claude 4 Sonnet
 
 **Created By:** Music Bot Team
 📢 **Channel:** @MusicBotUpdates
@@ -115,7 +117,7 @@ async def check_updates(_, callback: CallbackQuery):
 
 ✅ **Up to Date**
 🌟 **Version:** v3.2.1
-📅 **Last Checked:** 2025-05-17
+📅 **Last Checked:** 2025-01-17
 
 Join our channel for updates!"""
         ),
@@ -143,10 +145,13 @@ async def play_selected(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     video_id = callback.data.split("_")[1]
+    
     try:
         track = await extract_info(video_id)
+        
         if chat_id in current_streams:
             if len(queues.get(chat_id, [])) >= MAX_QUEUE_SIZE:
                 await callback.message.edit_media(
@@ -155,6 +160,7 @@ async def play_selected(_, callback: CallbackQuery):
                 )
                 await callback.answer("Queue full")
                 return
+            
             queues.setdefault(chat_id, []).append(track)
             await callback.message.edit_media(
                 InputMediaPhoto(
@@ -185,6 +191,7 @@ async def play_selected(_, callback: CallbackQuery):
                 )
                 await callback.answer("Voice chat error")
                 return
+        
         await callback.answer("Track added/playing")
     except Exception as e:
         await callback.message.edit_media(
@@ -198,10 +205,13 @@ async def vplay_selected(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     video_id = callback.data.split("_")[1]
+    
     try:
         track = await extract_video_info(video_id)
+        
         if chat_id in current_streams:
             if len(queues.get(chat_id, [])) >= MAX_QUEUE_SIZE:
                 await callback.message.edit_media(
@@ -210,6 +220,7 @@ async def vplay_selected(_, callback: CallbackQuery):
                 )
                 await callback.answer("Queue full")
                 return
+            
             queues.setdefault(chat_id, []).append(track)
             await callback.message.edit_media(
                 InputMediaPhoto(
@@ -240,6 +251,7 @@ async def vplay_selected(_, callback: CallbackQuery):
                 )
                 await callback.answer("Voice chat error")
                 return
+        
         await callback.answer("Video added/playing")
     except Exception as e:
         await callback.message.edit_media(
@@ -253,68 +265,18 @@ async def spotify_selected(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     track_id = callback.data.split("_")[1]
     await play_spotify_track(chat_id, track_id, callback.message)
     await callback.answer("Spotify track selected")
-
-@app.on_callback_query(filters.regex(r"^retry_play_(.+)$"))
-async def retry_play(_, callback: CallbackQuery):
-    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
-        await callback.answer("🚫 You don't have permission!", show_alert=True)
-        return
-    video_id = callback.data.split("_")[2]
-    await callback.message.edit_media(
-        InputMediaPhoto(media=SEARCH_IMG, caption="🔄 **Retrying**\n\nPlease wait...")
-    )
-    await play_selected(None, callback.__setattr__('data', f"play_{video_id}"))
-    await callback.answer("Retrying play")
-
-@app.on_callback_query(filters.regex(r"^retry_vplay_(.+)$"))
-async def retry_vplay(_, callback: CallbackQuery):
-    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
-        await callback.answer("🚫 You don't have permission!", show_alert=True)
-        return
-    video_id = callback.data.split("_")[2]
-    await callback.message.edit_media(
-        InputMediaPhoto(media=SEARCH_IMG, caption="🔄 **Retrying**\n\nPlease wait...")
-    )
-    await vplay_selected(None, callback.__setattr__('data', f"vplay_{video_id}"))
-    await callback.answer("Retrying video play")
-
-@app.on_callback_query(filters.regex(r"^retry_spotify$"))
-async def retry_spotify(_, callback: CallbackQuery):
-    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
-        await callback.answer("🚫 You don't have permission!", show_alert=True)
-        return
-    await callback.message.edit_media(
-        InputMediaPhoto(
-            media=SPOTIFY_IMG,
-            caption="🔄 **Retry Spotify**\n\nEnter `/play spotify_link` to try again."
-        ),
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="search_menu")]])
-    )
-    await callback.answer("Retry Spotify prompted")
-
-@app.on_callback_query(filters.regex(r"^retry_live$"))
-async def retry_live(_, callback: CallbackQuery):
-    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
-        await callback.answer("🚫 You don't have permission!", show_alert=True)
-        return
-    await callback.message.edit_media(
-        InputMediaPhoto(
-            media=SEARCH_IMG,
-            caption="🔄 **Retry Live Stream**\n\nEnter `/live m3u8_url` to try again."
-        ),
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="search_menu")]])
-    )
-    await callback.answer("Retry live stream prompted")
 
 @app.on_callback_query(filters.regex(r"^pause$"))
 async def pause_callback(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     if chat_id in current_streams:
         if chat_id not in paused_streams:
@@ -338,6 +300,7 @@ async def resume_callback(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     if chat_id in current_streams:
         if chat_id in paused_streams:
@@ -361,6 +324,7 @@ async def skip_callback(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     if chat_id in current_streams:
         await callback.message.edit_media(
@@ -380,6 +344,7 @@ async def stop_callback(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     if chat_id in current_streams:
         await pytgcalls.leave_group_call(chat_id)
@@ -389,6 +354,7 @@ async def stop_callback(_, callback: CallbackQuery):
             del queues[chat_id]
         if chat_id in paused_streams:
             del paused_streams[chat_id]
+        
         await callback.message.edit_media(
             InputMediaPhoto(
                 media=NOW_PLAYING_IMG,
@@ -409,8 +375,10 @@ async def show_queue_callback(_, callback: CallbackQuery):
             duration = await format_duration(track['duration']) if not track.get('is_live') else 'Live'
             title = track['title'][:35] + ("..." if len(track['title']) > 35 else "")
             queue_text += f"{i}. {title} ({duration})\n"
+        
         if len(queues[chat_id]) > 8:
             queue_text += f"\n...and {len(queues[chat_id]) - 8} more tracks"
+        
         await callback.message.edit_media(
             InputMediaPhoto(media=QUEUE_IMG, caption=queue_text),
             reply_markup=InlineKeyboardMarkup([
@@ -431,6 +399,7 @@ async def clear_queue_callback(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     chat_id = callback.message.chat.id
     if chat_id in queues:
         queues[chat_id].clear()
@@ -442,25 +411,6 @@ async def clear_queue_callback(_, callback: CallbackQuery):
     else:
         await callback.answer("Queue is already empty!", show_alert=True)
 
-@app.on_callback_query(filters.regex(r"^show_more_queue$"))
-async def show_more_queue_callback(_, callback: CallbackQuery):
-    chat_id = callback.message.chat.id
-    if chat_id in queues and len(queues[chat_id]) > 8:
-        queue_text = "📋 **Queue (Extended)**\n\n"
-        for i, track in enumerate(queues[chat_id], start=1):
-            duration = await format_duration(track['duration']) if not track.get('is_live') else 'Live'
-            title = track['title'][:35] + ("..." if len(track['title']) > 35 else "")
-            queue_text += f"{i}. {title} ({duration})\n"
-        await callback.message.edit_media(
-            InputMediaPhoto(media=QUEUE_IMG, caption=queue_text),
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Back", callback_data="show_queue"), InlineKeyboardButton("🗑 Clear Queue", callback_data="clear_queue")]
-            ])
-        )
-        await callback.answer("Extended queue displayed")
-    else:
-        await callback.answer("No more tracks to show!", show_alert=True)
-
 @app.on_callback_query(filters.regex(r"^now_playing$"))
 async def now_playing_callback(_, callback: CallbackQuery):
     chat_id = callback.message.chat.id
@@ -470,6 +420,7 @@ async def now_playing_callback(_, callback: CallbackQuery):
         if track.get('album'):
             caption += f"💿 Album: {track['album']}\n"
         caption += f"⏳ Duration: {'LIVE' if track.get('is_live') else await format_duration(track['duration'])}"
+        
         await callback.message.edit_media(
             InputMediaPhoto(media=track.get('thumbnail', NOW_PLAYING_IMG), caption=caption),
             reply_markup=InlineKeyboardMarkup([
@@ -496,7 +447,9 @@ async def more_results_callback(_, callback: CallbackQuery):
             duration = await format_duration(result['duration']) if 'duration' in result else "Unknown"
             callback_data = f"spotify_{result['id']}" if result.get('is_spotify') else f"play_{result['id']}"
             buttons.append([InlineKeyboardButton(f"{i}. {title} ({duration})", callback_data=callback_data)])
+        
         buttons.append([InlineKeyboardButton("🔙 Back", callback_data="search_menu"), InlineKeyboardButton("❌ Close", callback_data="close_search")])
+        
         await callback.message.edit_media(
             InputMediaPhoto(media=SEARCH_IMG, caption="🔍 **More Search Results**\n\nSelect a track:"),
             reply_markup=InlineKeyboardMarkup(buttons)
@@ -515,6 +468,7 @@ async def show_auth_users_callback(_, callback: CallbackQuery):
     if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
         await callback.answer("🚫 You don't have permission!", show_alert=True)
         return
+    
     if not auth_users:
         await callback.message.edit_media(
             InputMediaPhoto(media=AUTH_IMG, caption="❗ **No Authorized Users**\n\nAdd with /auth."),
@@ -527,3 +481,62 @@ async def show_auth_users_callback(_, callback: CallbackQuery):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Refresh", callback_data="show_auth_users")]])
         )
     await callback.answer("Authorized users displayed")
+
+# Retry callbacks
+@app.on_callback_query(filters.regex(r"^retry_play_(.+)$"))
+async def retry_play(_, callback: CallbackQuery):
+    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
+        await callback.answer("🚫 You don't have permission!", show_alert=True)
+        return
+    
+    video_id = callback.data.split("_")[2]
+    await callback.message.edit_media(
+        InputMediaPhoto(media=SEARCH_IMG, caption="🔄 **Retrying**\n\nPlease wait...")
+    )
+    # Create a new callback with the correct data format
+    new_callback = type('obj', (object,), {'data': f"play_{video_id}", 'message': callback.message, 'from_user': callback.from_user, 'answer': callback.answer})
+    await play_selected(_, new_callback)
+
+@app.on_callback_query(filters.regex(r"^retry_vplay_(.+)$"))
+async def retry_vplay(_, callback: CallbackQuery):
+    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
+        await callback.answer("🚫 You don't have permission!", show_alert=True)
+        return
+    
+    video_id = callback.data.split("_")[2]
+    await callback.message.edit_media(
+        InputMediaPhoto(media=SEARCH_IMG, caption="🔄 **Retrying**\n\nPlease wait...")
+    )
+    # Create a new callback with the correct data format
+    new_callback = type('obj', (object,), {'data': f"vplay_{video_id}", 'message': callback.message, 'from_user': callback.from_user, 'answer': callback.answer})
+    await vplay_selected(_, new_callback)
+
+@app.on_callback_query(filters.regex(r"^retry_spotify$"))
+async def retry_spotify(_, callback: CallbackQuery):
+    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
+        await callback.answer("🚫 You don't have permission!", show_alert=True)
+        return
+    
+    await callback.message.edit_media(
+        InputMediaPhoto(
+            media=SPOTIFY_IMG,
+            caption="🔄 **Retry Spotify**\n\nEnter `/play spotify_link` to try again."
+        ),
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="search_menu")]])
+    )
+    await callback.answer("Retry Spotify prompted")
+
+@app.on_callback_query(filters.regex(r"^retry_live$"))
+async def retry_live(_, callback: CallbackQuery):
+    if not await is_sudo(callback.from_user.id, auth_users, SUDO_USERS):
+        await callback.answer("🚫 You don't have permission!", show_alert=True)
+        return
+    
+    await callback.message.edit_media(
+        InputMediaPhoto(
+            media=SEARCH_IMG,
+            caption="🔄 **Retry Live Stream**\n\nEnter `/live m3u8_url` to try again."
+        ),
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="search_menu")]])
+    )
+    await callback.answer("Retry live stream prompted")

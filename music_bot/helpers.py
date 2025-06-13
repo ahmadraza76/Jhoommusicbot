@@ -18,7 +18,10 @@ async def search_yt(query: str, max_results: int = 5) -> List[Dict]:
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = await asyncio.get_event_loop().run_in_executor(None, lambda: ydl.extract_info(f"ytsearch{max_results}:{query}", download=False))
+            info = await asyncio.get_event_loop().run_in_executor(
+                None, 
+                lambda: ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
+            )
             return info.get('entries', [])
     except Exception as e:
         logger.error(f"Search error: {e}")
@@ -71,7 +74,10 @@ async def extract_info(video_id: str) -> Dict:
     ydl_opts = {'format': 'bestaudio', 'quiet': True, 'noplaylist': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = await asyncio.get_event_loop().run_in_executor(None, lambda: ydl.extract_info(video_id, download=False))
+            info = await asyncio.get_event_loop().run_in_executor(
+                None, 
+                lambda: ydl.extract_info(video_id, download=False)
+            )
             if info.get('duration', 0) > MAX_DURATION:
                 raise ValueError(f"Duration exceeds {MAX_DURATION} seconds")
             return {
@@ -90,7 +96,10 @@ async def extract_video_info(video_id: str) -> Dict:
     ydl_opts = {'format': 'bestvideo[height<=720]+bestaudio', 'quiet': True, 'noplaylist': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = await asyncio.get_event_loop().run_in_executor(None, lambda: ydl.extract_info(video_id, download=False))
+            info = await asyncio.get_event_loop().run_in_executor(
+                None, 
+                lambda: ydl.extract_info(video_id, download=False)
+            )
             if info.get('duration', 0) > MAX_DURATION:
                 raise ValueError(f"Duration exceeds {MAX_DURATION} seconds")
             return {
@@ -126,3 +135,94 @@ async def format_duration(seconds: int) -> str:
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes:02d}:{seconds:02d}"
+
+async def play_spotify_track(chat_id: int, track_id: str, message):
+    """Helper function to play Spotify tracks by searching YouTube"""
+    from client import app, sp, pytgcalls, current_streams, queues
+    from config import ERROR_IMG, NOW_PLAYING_IMG, MAX_QUEUE_SIZE
+    from pytgcalls.types import AudioPiped, HighQualityAudio
+    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+    
+    if not sp:
+        if message:
+            await message.reply_photo(
+                photo=ERROR_IMG,
+                caption="❌ **Spotify Not Available**\n\nConfigure Spotify credentials.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("ℹ️ Learn More", url="https://developer.spotify.com/documentation/general/guides/authorization-guide/")]])
+            )
+        return
+    
+    try:
+        spotify_track = await get_spotify_track(track_id)
+        query = f"{spotify_track['title']} official audio"
+        
+        msg = None
+        if message:
+            msg = await message.reply_photo(
+                photo=spotify_track['thumbnail'],
+                caption=f"🔍 **Searching YouTube**\n\n`{query}`\n\nPlease wait..."
+            )
+        
+        yt_results = await search_yt(query, 1)
+        if not yt_results:
+            raise ValueError("No YouTube results found")
+        
+        yt_track = await extract_info(yt_results[0]['url'])
+        yt_track['thumbnail'] = spotify_track['thumbnail']
+        yt_track['album'] = spotify_track.get('album')
+        
+        if chat_id in current_streams:
+            if len(queues.get(chat_id, [])) >= MAX_QUEUE_SIZE:
+                raise ValueError(f"Queue limit reached ({MAX_QUEUE_SIZE})")
+            queues.setdefault(chat_id, []).append(yt_track)
+            reply_text = f"➕ **Added to Queue**\n\n**{yt_track['title'][:35]}{'...' if len(yt_track['title']) > 35 else ''}**\n"
+            if yt_track.get('album'):
+                reply_text += f"💿 Album: {yt_track['album']}\n"
+            reply_text += f"⏳ Duration: {await format_duration(yt_track['duration'])}"
+            final_reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("📋 View Queue", callback_data="show_queue")]])
+        else:
+            current_streams[chat_id] = yt_track
+            try:
+                await pytgcalls.join_group_call(chat_id, AudioPiped(yt_track['url'], HighQualityAudio()))
+                reply_text = f"🎧 **Now Playing**\n\n**{yt_track['title'][:35]}{'...' if len(yt_track['title']) > 35 else ''}**\n"
+                if yt_track.get('album'):
+                    reply_text += f"💿 Album: {yt_track['album']}\n"
+                reply_text += f"⏳ Duration: {await format_duration(yt_track['duration'])}"
+                final_reply_markup = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("⏸ Pause", callback_data="pause"), InlineKeyboardButton("⏭ Skip", callback_data="skip"), InlineKeyboardButton("⏹ Stop", callback_data="stop")],
+                    [InlineKeyboardButton("📋 Queue", callback_data="show_queue"), InlineKeyboardButton("🎵 Now Playing", callback_data="now_playing")]
+                ])
+            except Exception as e:
+                if chat_id in current_streams:
+                    del current_streams[chat_id]
+                raise Exception(f"Failed to join VC: {e}")
+        
+        if msg:
+            await msg.edit_media(
+                InputMediaPhoto(
+                    media=yt_track['thumbnail'],
+                    caption=reply_text
+                ),
+                reply_markup=final_reply_markup
+            )
+        else:
+            await app.send_photo(
+                chat_id,
+                photo=yt_track['thumbnail'],
+                caption=reply_text,
+                reply_markup=final_reply_markup
+            )
+    except Exception as e:
+        error_msg = f"❌ **Error**\n\n`{str(e)}`\n\nTry again."
+        if msg:
+            await msg.edit_media(
+                InputMediaPhoto(media=ERROR_IMG, caption=error_msg),
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Retry", callback_data="retry_spotify")]])
+            )
+        else:
+            await app.send_photo(
+                chat_id,
+                photo=ERROR_IMG,
+                caption=error_msg,
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Retry", callback_data="retry_spotify")]])
+            )

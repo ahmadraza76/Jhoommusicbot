@@ -2,6 +2,7 @@ from pyrogram import Client
 from pytgcalls import PyTgCalls
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+from typing import Dict, List
 from config import API_ID, API_HASH, BOT_TOKEN, FFMPEG_PROCESSES, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, logger, SUDO_USERS
 
 # Initialize bot
@@ -10,8 +11,13 @@ pytgcalls = PyTgCalls(app, cache_duration=100, overload_quiet_mode=True, multi_t
 
 # Spotify setup
 if SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET:
-    auth_manager = SpotifyClientCredentials(client_id=SPOTIFY_CLIENT_ID, client_secret=SPOTIFY_CLIENT_SECRET)
-    sp = spotipy.Spotify(auth_manager=auth_manager)
+    try:
+        auth_manager = SpotifyClientCredentials(client_id=SPOTIFY_CLIENT_ID, client_secret=SPOTIFY_CLIENT_SECRET)
+        sp = spotipy.Spotify(auth_manager=auth_manager)
+        logger.info("Spotify integration enabled")
+    except Exception as e:
+        sp = None
+        logger.error(f"Spotify setup failed: {e}")
 else:
     sp = None
     logger.warning("Spotify credentials missing. Spotify features disabled.")
